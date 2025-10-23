@@ -22,8 +22,9 @@ permissions:
   actions: read
 
 env:
-  DOCKER_IMAGE: hroberts1/cryptobot_go
+  DOCKER_IMAGE: hroberts1/cryptobot-app
   SERVICE_NAME: cryptobot_api_gateway
+  COMPONENT_NAME: api-gateway
   
 jobs:
   build-and-test:
@@ -69,9 +70,10 @@ jobs:
     - name: Set up environment variables
       id: env
       run: |
-        # Use the existing cryptobot_go repository
-        echo "docker_image=hroberts1/cryptobot_go" >> $GITHUB_OUTPUT
+        # Use unified app repository with component-specific tags
+        echo "docker_image=hroberts1/cryptobot-app" >> $GITHUB_OUTPUT
         echo "service_name=cryptobot_api_gateway" >> $GITHUB_OUTPUT
+        echo "component_name=api-gateway" >> $GITHUB_OUTPUT
       
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
@@ -130,6 +132,10 @@ jobs:
         echo "new_version=$new_version" >> $GITHUB_OUTPUT
         echo "bump_type=$bump_type" >> $GITHUB_OUTPUT
         
+        # Generate component-specific tags
+        echo "component_version_tag=$new_version-api-gateway" >> $GITHUB_OUTPUT
+        echo "component_latest_tag=api-gateway-latest" >> $GITHUB_OUTPUT
+        
     - name: Build and push Docker image
       id: docker_build
       uses: docker/build-push-action@v5
@@ -138,12 +144,14 @@ jobs:
         platforms: linux/amd64,linux/arm64
         push: true
         tags: |
+          ${{ steps.env.outputs.docker_image }}:${{ steps.version.outputs.component_version_tag }}
+          ${{ steps.env.outputs.docker_image }}:${{ steps.version.outputs.component_latest_tag }}
           ${{ steps.env.outputs.docker_image }}:${{ steps.version.outputs.new_version }}
-          ${{ steps.env.outputs.docker_image }}:latest
         labels: |
           org.opencontainers.image.title=${{ steps.env.outputs.service_name }}
           org.opencontainers.image.description=${{ steps.env.outputs.service_name }} API Gateway
           org.opencontainers.image.version=${{ steps.version.outputs.new_version }}
+          org.opencontainers.image.component=${{ steps.env.outputs.component_name }}
           org.opencontainers.image.source=${{ github.repositoryUrl }}
           org.opencontainers.image.revision=${{ github.sha }}
         cache-from: type=gha
@@ -171,7 +179,7 @@ jobs:
       uses: aquasecurity/trivy-action@master
       if: github.event_name == 'push'
       with:
-        image-ref: '${{ steps.env.outputs.docker_image }}:latest'
+        image-ref: '${{ steps.env.outputs.docker_image }}:${{ steps.version.outputs.component_latest_tag }}'
         format: 'sarif'
         output: 'trivy-results.sarif'
       continue-on-error: true
@@ -189,9 +197,12 @@ jobs:
         echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
         echo "- **Previous Version:** ${{ steps.version.outputs.current_version }}" >> $GITHUB_STEP_SUMMARY
         echo "- **New Version:** ${{ steps.version.outputs.new_version }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Component:** ${{ steps.env.outputs.component_name }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Bump Type:** ${{ steps.version.outputs.bump_type }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Docker Image:** \`${{ steps.env.outputs.docker_image }}:${{ steps.version.outputs.new_version }}\`" >> $GITHUB_STEP_SUMMARY
-        echo "- **Also Tagged:** \`${{ steps.env.outputs.docker_image }}:latest\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **Docker Images:**" >> $GITHUB_STEP_SUMMARY
+        echo "  - \`${{ steps.env.outputs.docker_image }}:${{ steps.version.outputs.component_version_tag }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "  - \`${{ steps.env.outputs.docker_image }}:${{ steps.version.outputs.component_latest_tag }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "  - \`${{ steps.env.outputs.docker_image }}:${{ steps.version.outputs.new_version }}\`" >> $GITHUB_STEP_SUMMARY
         if [ -f "trivy-results.sarif" ]; then
           echo "- **Security Scan:** Results uploaded to GitHub Security tab" >> $GITHUB_STEP_SUMMARY
         fi
