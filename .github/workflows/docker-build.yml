@@ -22,8 +22,8 @@ permissions:
   actions: read
 
 env:
-  DOCKER_IMAGE: hroberts1/cryptobot-api-gateway
-  SERVICE_NAME: cryptobot-api-gateway
+  DOCKER_IMAGE: hroberts1/cryptobot_go
+  SERVICE_NAME: cryptobot_api_gateway
   
 jobs:
   build-and-test:
@@ -69,9 +69,9 @@ jobs:
     - name: Set up environment variables
       id: env
       run: |
-        # Use the API gateway repository name
-        echo "docker_image=hroberts1/cryptobot-api-gateway" >> $GITHUB_OUTPUT
-        echo "service_name=cryptobot-api-gateway" >> $GITHUB_OUTPUT
+        # Use the existing cryptobot_go repository
+        echo "docker_image=hroberts1/cryptobot_go" >> $GITHUB_OUTPUT
+        echo "service_name=cryptobot_api_gateway" >> $GITHUB_OUTPUT
       
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3

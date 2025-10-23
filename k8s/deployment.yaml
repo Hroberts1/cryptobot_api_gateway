@@ -32,7 +32,7 @@ spec:
 
       containers:
       - name: cryptobot-api-gateway
-        image: hroberts1/cryptobot-api-gateway:latest
+        image: hroberts1/cryptobot_go:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
