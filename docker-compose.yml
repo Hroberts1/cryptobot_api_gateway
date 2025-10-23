@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # API Gateway
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - LOG_LEVEL=debug
+      - JWT_SECRET=development-secret-key-change-in-production
+      - MESSAGE_BROKER_URL=stomp://artemis:61613
+    volumes:
+      - ./config:/app/config:ro
+    depends_on:
+      - artemis
+    networks:
+      - cryptobot-net
+
+  # ActiveMQ Artemis Message Broker
+  artemis:
+    image: apache/activemq-artemis:2.31.2
+    ports:
+      - "8161:8161"  # Web console
+      - "61613:61613" # STOMP
+      - "61616:61616" # Core/JMS
+    environment:
+      - ARTEMIS_USER=admin
+      - ARTEMIS_PASSWORD=admin
+    volumes:
+      - artemis_data:/var/lib/artemis-instance
+    networks:
+      - cryptobot-net
+
+  # Mock UI Service (for testing)
+  mock-ui:
+    image: nginx:alpine
+    ports:
+      - "3000:80"
+    volumes:
+      - ./examples/mock-ui:/usr/share/nginx/html:ro
+    networks:
+      - cryptobot-net
+
+  # Mock Account Service (for testing)
+  mock-account-service:
+    image: nginx:alpine
+    ports:
+      - "8081:80"
+    volumes:
+      - ./examples/mock-services/account:/usr/share/nginx/html:ro
+    networks:
+      - cryptobot-net
+
+volumes:
+  artemis_data:
+
+networks:
+  cryptobot-net:
+    driver: bridge

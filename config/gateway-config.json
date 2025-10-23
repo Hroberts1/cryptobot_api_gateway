@@ -1,0 +1,62 @@
+{
+  "apiGatewayConfig": {
+    "listenPort": 8080,
+    "logLevel": "info",
+    "corsOrigins": [
+      "http://cryptobot.local"
+    ],
+    "jwtSecretKey": "YOUR_JWT_SECRET_OR_K8S_SECRET_REF"
+  },
+  "serviceDependencies": {
+    "messageBroker": {
+      "url": "amqp://artemis-service:61616",
+      "subscribedTopics": [
+        "topic://trades.filled",
+        "topic://orders.updated",
+        "topic://pnl.update",
+        "topic://portfolio.snapshot",
+        "topic://system.registry.online",
+        "topic://system.registry.offline",
+        "topic://market.data.live"
+      ],
+      "publishQueues": [
+        "queue://commands.start_bot",
+        "queue://commands.stop_bot",
+        "queue://commands.fetch.history"
+      ]
+    },
+    "internalServices": [
+      {
+        "name": "account-service",
+        "routePrefix": "/api/v1/portfolio",
+        "targetUrl": "http://account-service:8080"
+      },
+      {
+        "name": "order-monitor-service",
+        "routePrefix": "/api/v1/orders/active",
+        "targetUrl": "http://order-monitor-service:8080"
+      },
+      {
+        "name": "buy-sell-engine",
+        "routePrefix": "/api/v1/trade/execute",
+        "targetUrl": "http://buy-sell-engine:8080"
+      },
+      {
+        "name": "report-engine",
+        "routePrefix": "/api/v1/reports",
+        "targetUrl": "http://report-engine:8080"
+      }
+    ],
+    "uiService": {
+      "name": "cryptobot-ui-service",
+      "internalUrl": "http://cryptobot-ui-service-service:80"
+    }
+  },
+  "externalDependencies": {
+    "coinbaseApi": {
+      "restUrl": "https://api.exchange.coinbase.com",
+      "apiKeySecretRef": "coinbase-api-key",
+      "apiSecretSecretRef": "coinbase-api-secret"
+    }
+  }
+}

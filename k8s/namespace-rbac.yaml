@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cryptobot
+  labels:
+    name: cryptobot
+    part-of: cryptobot-system
+    managed-by: kubectl
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cryptobot-api-gateway-sa
+  namespace: cryptobot
+  labels:
+    app: cryptobot-api-gateway
+    component: api-gateway
+    part-of: cryptobot-system
+automountServiceAccountToken: false
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cryptobot-api-gateway-netpol
+  namespace: cryptobot
+  labels:
+    app: cryptobot-api-gateway
+    component: api-gateway
+    part-of: cryptobot-system
+spec:
+  podSelector:
+    matchLabels:
+      app: cryptobot-api-gateway
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    - namespaceSelector:
+        matchLabels:
+          name: cryptobot
+    ports:
+    - protocol: TCP
+      port: 8080
+  egress:
+  - {} # Allow all outbound for API calls to external services and internal microservices

@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cryptobot-api-gateway-service
+  namespace: cryptobot
+  labels:
+    app: cryptobot-api-gateway
+    component: api-gateway
+    part-of: cryptobot-system
+spec:
+  type: ClusterIP
+  selector:
+    app: cryptobot-api-gateway
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+    protocol: TCP
+  - name: websocket
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cryptobot-api-gateway-headless
+  namespace: cryptobot
+  labels:
+    app: cryptobot-api-gateway
+    component: api-gateway
+    part-of: cryptobot-system
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    app: cryptobot-api-gateway
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+    protocol: TCP

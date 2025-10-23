@@ -1,0 +1,113 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cryptobot-api-gateway
+  namespace: cryptobot
+  labels:
+    app: cryptobot-api-gateway
+    component: api-gateway
+    part-of: cryptobot-system
+    version: "1.0.0"
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: cryptobot-api-gateway
+  template:
+    metadata:
+      labels:
+        app: cryptobot-api-gateway
+        component: api-gateway
+        part-of: cryptobot-system
+    spec:
+      imagePullSecrets:
+      - name: dockerhub-secret
+
+      serviceAccountName: cryptobot-api-gateway-sa
+
+      containers:
+      - name: cryptobot-api-gateway
+        image: hroberts1/cryptobot-api-gateway:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+
+        env:
+        - name: CONFIG_PATH
+          value: "/app/config/gateway-config.json"
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: cryptobot-secrets
+              key: jwt-secret
+        - name: MESSAGE_BROKER_URL
+          value: "stomp://artemis-service:61613"
+        - name: COINBASE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: coinbase-secrets
+              key: api-key
+              optional: true
+        - name: COINBASE_API_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: coinbase-secrets
+              key: api-secret
+              optional: true
+
+        envFrom:
+        - configMapRef:
+            name: cryptobot-api-gateway-config
+
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1001
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: config-volume
+          mountPath: /app/config
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: config-volume
+        configMap:
+          name: cryptobot-api-gateway-config-file
+      securityContext:
+        fsGroup: 1001
+      restartPolicy: Always

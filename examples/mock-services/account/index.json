@@ -1,0 +1,26 @@
+{
+  "status": "healthy",
+  "service": "mock-account-service",
+  "version": "1.0.0",
+  "timestamp": "2024-01-01T00:00:00Z",
+  "portfolio": {
+    "totalValue": 10000.00,
+    "cash": 2500.00,
+    "positions": [
+      {
+        "symbol": "BTC-USD",
+        "quantity": 0.5,
+        "averagePrice": 45000.00,
+        "currentPrice": 50000.00,
+        "unrealizedPnL": 2500.00
+      },
+      {
+        "symbol": "ETH-USD",
+        "quantity": 10.0,
+        "averagePrice": 3000.00,
+        "currentPrice": 3500.00,
+        "unrealizedPnL": 5000.00
+      }
+    ]
+  }
+}
